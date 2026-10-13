@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Smart Electricity Usage Monitor</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f3f6fb;color:#18243a}.side{position:fixed;left:0;top:0;bottom:0;width:220px;background:#10233f;color:white;padding:25px}.side h2{font-size:20px}.side a{display:block;color:#d9e5f5;text-decoration:none;padding:13px 5px}.side p{font-size:12px;color:#b9c8da;margin-top:80px}main{margin-left:220px;padding:28px}.top{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}.muted{color:#738097;font-size:14px}.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:15px;margin:22px 0}.card,.panel{background:white;border:1px solid #e2e8f0;border-radius:14px;padding:20px}.label{font-size:13px;color:#738097}.value{font-size:27px;font-weight:bold;margin-top:12px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:16px 0}.panel h3{margin:0 0 6px}.chart{height:260px}.button{background:#13a879;color:white;border:0;padding:11px 14px;border-radius:8px;cursor:pointer}select{padding:10px;border:1px solid #ddd;border-radius:8px}@media(max-width:850px){.side{position:static;width:auto}.side p{display:none}main{margin:0;padding:16px}.cards{grid-template-columns:repeat(2,1fr)}.grid{grid-template-columns:1fr}}@media(max-width:450px){.cards{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<aside class="side"><h2>⚡ Smart Energy Monitor</h2><a href="#overview">▦ Overview</a><a href="#trends">↗ Usage Trends</a><a href="#appliances">▤ Appliances</a><a href="#analysis">◉ Analysis</a><p>Demo mode<br>Illustrative sample data only — not live meter readings.</p></aside>
+<main id="overview">
+<div class="top"><div><h1>Electricity Dashboard</h1><div class="muted">Track usage, estimate costs, and explore consumption patterns.</div></div><div><select id="period"><option value="7">Last 7 days</option><option value="12">Last 12 days</option></select> <button class="button" id="export">Export CSV ↓</button></div></div>
+<p class="muted">Sample tariff assumption: ₹6.80 per kWh</p>
+<section class="cards">
+<div class="card"><div class="label">Daily Energy Usage</div><div class="value" id="usage">32.1 kWh</div></div>
+<div class="card"><div class="label">Estimated Bill</div><div class="value" id="bill">₹218</div></div>
+<div class="card"><div class="label">Peak Usage Period</div><div class="value">12–2 PM</div></div>
+<div class="card"><div class="label">Potential Energy Saved</div><div class="value" id="saved">4.8 kWh</div></div>
+</section>
+<section class="grid" id="trends"><div class="panel"><h3>Daily Energy Usage</h3><p class="muted">Energy consumption over time (kWh)</p><div class="chart"><canvas id="line"></canvas></div></div>
+<div class="panel" id="appliances"><h3>Usage by Appliance</h3><p class="muted">Estimated daily consumption</p><div class="chart"><canvas id="bar"></canvas></div></div></section>
+<section class="grid"><div class="panel"><h3>Energy Share by Appliance</h3><p class="muted">Share of sample usage</p><div class="chart"><canvas id="pie"></canvas></div></div>
+<div class="panel"><h3>Hourly Consumption</h3><p class="muted">Sample usage across selected hours</p><div class="chart"><canvas id="hour"></canvas></div></div></section>
+<section class="panel" id="analysis"><h3>Quick Insights</h3><p>The air conditioner is the largest load in this sample dataset. Consider switching off unused devices and reviewing high-consumption periods.</p><p class="muted">This prototype uses illustrative values. Real-time monitoring requires smart meter/IoT integration and a backend.</p></section>
+</main>
+<script>
+const dates=['Oct 1','Oct 2','Oct 3','Oct 4','Oct 5','Oct 6','Oct 7','Oct 8','Oct 9','Oct 10','Oct 11','Oct 12'];
+const vals=[24.1,25.3,23.8,26,27.2,29.1,28.4,27.8,30.2,31,29.7,32.1];
+const appliances=['Air Conditioner','Refrigerator','Water Heater','Washer','TV','Lighting','Fans','Computer'];
+const av=[6.8,2.4,3.1,1.8,1.2,.9,1.7,1.5], hrs=['06:00','08:00','10:00','12:00','14:00','16:00','18:00','20:00'], hv=[.7,.9,1.6,2.2,1.5,1.8,2.4,2];
+let charts={};function chart(id,type,data,options={}){if(charts[id])charts[id].destroy();charts[id]=new Chart(document.getElementById(id),{type,data,options:{responsive:true,maintainAspectRatio:false,...options}})}
+function render(){let n=+document.getElementById('period').value,ds=dates.slice(12-n),vs=vals.slice(12-n),v=vs[vs.length-1];document.getElementById('usage').textContent=v.toFixed(1)+' kWh';document.getElementById('bill').textContent='₹'+Math.round(v*6.8);document.getElementById('saved').textContent=(v*.15).toFixed(1)+' kWh';
+chart('line','line',{labels:ds,datasets:[{label:'Daily usage (kWh)',data:vs,borderColor:'#13a879',backgroundColor:'rgba(19,168,121,.12)',fill:true,tension:.3}]});
+chart('bar','bar',{labels:appliances,datasets:[{label:'kWh/day',data:av,backgroundColor:'#3b82f6'}]},{plugins:{legend:{display:false}}});
+chart('pie','doughnut',{labels:appliances,datasets:[{data:av,backgroundColor:['#13a879','#3b82f6','#f59e0b','#8b5cf6','#ec4899','#06b6d4','#84cc16','#64748b']}]});
+chart('hour','bar',{labels:hrs,datasets:[{label:'Usage (kWh)',data:hv,backgroundColor:'#f59e0b'}]},{plugins:{legend:{display:false}}});}
+document.getElementById('period').addEventListener('change',render);
+document.getElementById('export').addEventListener('click',()=>{let csv='Date,Daily_Energy_Usage_kWh\n'+dates.map((d,i)=>d+','+vals[i]).join('\n');let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='electricity_usage.csv';a.click();URL.revokeObjectURL(a.href)});render();
+</script>
+</body></html>
